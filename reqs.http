@@ -1,0 +1,16 @@
+### GET request to example server
+GET https://examples.http-client.intellij.net/get
+    ?generated-in=IntelliJ IDEA
+
+###
+
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "symbol": "BTC/USDT",
+  "side": "BUY",
+  "price": 95500.50,
+  "quantity": 0.5
+}
