@@ -25,12 +25,16 @@ public class Engine {
             match(newOrder, buyOrders);
         }
 
+
         if (newOrder.getRemainingQuantity().compareTo(BigDecimal.ZERO) > 0) {
             addOrderToBook(newOrder);
             System.out.println("📌 Ordinul a fost adăugat în Book. Rămas: " + newOrder.getRemainingQuantity());
         } else {
             System.out.println("✅ Ordin complet executat!");
         }
+
+        printTrees();
+
     }
 
     private void match(Order newOrder, TreeMap<BigDecimal, List<Order>> oppositeBook) {        // Dacă e BUY, căutăm în SELL-uri (cel mai mic preț)
@@ -78,6 +82,44 @@ public class Engine {
         var book = (order.getSide() == OrderSide.BUY) ? buyOrders : sellOrders;
         book.computeIfAbsent(order.getPrice(), k -> new ArrayList<>()).add(order);
 
+    }
+
+    private void printTrees() {
+        System.out.println("\n================ ORDER BOOK ================");
+
+        // 1. Afișăm SELL ORDERS (ASK) - Cele mai mici prețuri jos, lângă mijloc
+        System.out.println("--- SELL SIDE (ASKS) ---");
+        if (sellOrders.isEmpty()) {
+            System.out.println("  [ EMPTY ]");
+        } else {
+            // Folosim descendingKeySet ca să vedem prețurile mari sus și cele mici jos (spre mijloc)
+            for (BigDecimal price : sellOrders.descendingKeySet()) {
+                List<Order> orders = sellOrders.get(price);
+                BigDecimal totalQty = orders.stream()
+                        .map(Order::getRemainingQuantity)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                System.out.printf("  Price: %.2f | Qty: %.4f (%d orders)\n", price, totalQty, orders.size());
+            }
+        }
+
+        System.out.println("--------------------------------------------");
+        System.out.println("  ▲ SPREAD ▲  ");
+        System.out.println("--------------------------------------------");
+
+        // 2. Afișăm BUY ORDERS (BIDS) - Cele mai mari prețuri sus, lângă mijloc
+        System.out.println("--- BUY SIDE (BIDS) ---");
+        if (buyOrders.isEmpty()) {
+            System.out.println("  [ EMPTY ]");
+        } else {
+            for (BigDecimal price : buyOrders.keySet()) {
+                List<Order> orders = buyOrders.get(price);
+                BigDecimal totalQty = orders.stream()
+                        .map(Order::getRemainingQuantity)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                System.out.printf("  Price: %.2f | Qty: %.4f (%d orders)\n", price, totalQty, orders.size());
+            }
+        }
+        System.out.println("============================================\n");
     }
 
     @PostConstruct
