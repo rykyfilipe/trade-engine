@@ -3,6 +3,10 @@ package com.tradeengine.engine.core.engine;
 import com.tradeengine.engine.core.model.OrderSide;
 import com.tradeengine.engine.core.model.OrderStatus;
 import com.tradeengine.engine.persistence.entity.Order;
+import com.tradeengine.engine.persistence.entity.Trade;
+import com.tradeengine.engine.persistence.repository.OrderRepository;
+import com.tradeengine.engine.persistence.repository.TradeRepository;
+import com.tradeengine.engine.service.WalletService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Service;
@@ -13,8 +17,34 @@ import java.util.*;
 @Service
 public class Engine {
 
+    private final TradeRepository tradeRepository;
+    private final OrderRepository orderRepository;
+    private final WalletService walletService;
+
+    public Engine(TradeRepository tradeRepository, OrderRepository orderRepository, WalletService walletService) {
+        this.tradeRepository = tradeRepository;
+        this.orderRepository = orderRepository;
+        this.walletService = walletService;
+    }
+
     private final TreeMap<BigDecimal, List<Order>> buyOrders = new TreeMap<>(Collections.reverseOrder());
     private final TreeMap<BigDecimal, List<Order>> sellOrders = new TreeMap<>();
+
+    @PostConstruct
+    public void init() {
+        System.out.println("🔄 Reconstruiesc Order Book-ul din baza de date...");
+
+        List<Order> activeOrders = orderRepository.findByStatusInOrderByIdAsc(
+                List.of(OrderStatus.PENDING, OrderStatus.PARTIALLY_FILLED)
+        );
+
+        for(Order order : activeOrders) {
+            addOrderToBook(order);
+        }
+
+        System.out.println("✅ Engine pregătit. Am încărcat " + activeOrders.size() + " ordine.");
+        printTrees();
+    }
 
     public void processOrder(Order newOrder) {
         System.out.println("📥 Ordin nou primit: " + newOrder.getSide() + " | Preț: " + newOrder.getPrice());
@@ -65,6 +95,10 @@ public class Engine {
 
                 // Aici vom genera un Trade Event mai târziu!
                 System.out.println("Match găsit! Cantitate: " + tradeQty + " la prețul: " + bestOppositePrice);
+                System.out.println(newOrder);
+                Trade newTrade = generateTrade(matchingOrder, newOrder, tradeQty, bestOppositePrice);
+
+                System.out.println(newTrade);
 
                 if (matchingOrder.getRemainingQuantity().compareTo(BigDecimal.ZERO) == 0) {
                     matchingOrder.setStatus(OrderStatus.FILLED);
@@ -82,6 +116,25 @@ public class Engine {
         var book = (order.getSide() == OrderSide.BUY) ? buyOrders : sellOrders;
         book.computeIfAbsent(order.getPrice(), k -> new ArrayList<>()).add(order);
 
+    }
+
+    private Trade generateTrade(Order maker, Order taker, BigDecimal quantity, BigDecimal price) {
+        Trade trade = new Trade();
+
+        // Setăm cine a cumpărat și cine a vândut
+        if (taker.getSide() == OrderSide.BUY) {
+            trade.setBuyerOrderId(taker.getId());
+            trade.setSellerOrderId(maker.getId());
+        } else {
+            trade.setBuyerOrderId(maker.getId());
+            trade.setSellerOrderId(taker.getId());
+        }
+
+        trade.setPrice(price);
+        trade.setQuantity(quantity);
+        trade.setSymbol(taker.getSymbol());
+
+        return tradeRepository.save(trade);
     }
 
     private void printTrees() {
@@ -122,8 +175,5 @@ public class Engine {
         System.out.println("============================================\n");
     }
 
-    @PostConstruct
-    public void init(){
-        System.out.println("Trade engine started with success!");
-    }
+
 }

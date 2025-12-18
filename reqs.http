@@ -9,7 +9,7 @@ Content-Type: application/json
 
 {
   "userId": 1,
-  "symbol": "BTC/USDT",
+  "symbol": "ASS",
   "side": "BUY",
   "price": 95.50,
   "quantity": 2.5
@@ -22,8 +22,40 @@ Content-Type: application/json
 
 {
 "userId": 1,
-"symbol": "BTC/USDT",
+"symbol": "ASS",
 "side": "SELL",
-"price": 95.50,
-"quantity": 1.5
+"price": 12345.4321234,
+"quantity": 4
 }
+
+###
+
+POST localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "Ana",
+  "email": "ana@gmail.com",
+  "password": "pass",
+  "wallets": []
+}
+
+###
+
+GET localhost:8080/api/users
+
+###
+
+POST localhost:8080/api/wallet
+Content-Type: application/json
+
+{
+  "user": {"id": 11},
+  "availableAmount": 123.1239876543234567890987654345678,
+  "blockedAmount": 234.23,
+  "currency": "BTC"
+}
+
+###
+
+GET localhost:8080/api/wallet

@@ -21,11 +21,13 @@ public class Trade {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long makerOrderId;
-    private Long takerOrderId;
+    private Long sellerOrderId;
+    private Long buyerOrderId;
 
     private BigDecimal price;
     private BigDecimal quantity;
+
+    private String symbol;
 
     private LocalDateTime executedAt;
 
