@@ -98,6 +98,8 @@ public class Engine {
                 System.out.println(newOrder);
                 Trade newTrade = generateTrade(matchingOrder, newOrder, tradeQty, bestOppositePrice);
 
+                walletService.settleTrade(matchingOrder, newOrder, tradeQty, matchingOrder.getPrice());
+
                 System.out.println(newTrade);
 
                 if (matchingOrder.getRemainingQuantity().compareTo(BigDecimal.ZERO) == 0) {
@@ -118,21 +120,35 @@ public class Engine {
 
     }
 
-    private Trade generateTrade(Order maker, Order taker, BigDecimal quantity, BigDecimal price) {
+    public void deleteOrderFromBook(Order order) {
+        var book = (order.getSide() == OrderSide.BUY) ? buyOrders : sellOrders;
+
+        List<Order> ordersAtPrice = book.get(order.getPrice());
+
+        if (ordersAtPrice != null) {
+            ordersAtPrice.removeIf(o -> o.getId().equals(order.getId()));
+
+            if (ordersAtPrice.isEmpty()) {
+                book.remove(order.getPrice());
+            }
+        }
+    }
+
+    private Trade generateTrade(Order seller, Order buyer, BigDecimal quantity, BigDecimal price) {
         Trade trade = new Trade();
 
         // Setăm cine a cumpărat și cine a vândut
-        if (taker.getSide() == OrderSide.BUY) {
-            trade.setBuyerOrderId(taker.getId());
-            trade.setSellerOrderId(maker.getId());
+        if (buyer.getSide() == OrderSide.BUY) {
+            trade.setSellerOrder(buyer);
+            trade.setBuyerOrder(seller);
         } else {
-            trade.setBuyerOrderId(maker.getId());
-            trade.setSellerOrderId(taker.getId());
+            trade.setSellerOrder(seller);
+            trade.setBuyerOrder(buyer);
         }
 
         trade.setPrice(price);
         trade.setQuantity(quantity);
-        trade.setSymbol(taker.getSymbol());
+        trade.setSymbol(buyer.getSymbol());
 
         return tradeRepository.save(trade);
     }

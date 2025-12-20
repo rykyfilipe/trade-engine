@@ -34,8 +34,8 @@ POST localhost:8080/api/users
 Content-Type: application/json
 
 {
-  "username": "Ana",
-  "email": "ana@gmail.com",
+  "username": "sdfgh",
+  "email": "asdf@gmail.com",
   "password": "pass",
   "wallets": []
 }
@@ -43,19 +43,68 @@ Content-Type: application/json
 ###
 
 GET localhost:8080/api/users
+###
+DELETE localhost:8080/api/users/1
 
 ###
 
-POST localhost:8080/api/wallet
+POST localhost:8080/api/wallets
 Content-Type: application/json
 
 {
-  "user": {"id": 11},
-  "availableAmount": 123.1239876543234567890987654345678,
-  "blockedAmount": 234.23,
-  "currency": "BTC"
+  "user": {"id": 2},
+  "availableAmount": 0,
+  "blockedAmount": 0,
+  "currency": "BTC/USDT"
 }
 
 ###
 
-GET localhost:8080/api/wallet
+POST localhost:8080/api/wallets/deposit
+Content-Type: application/json
+
+{
+  "userId": 5,
+  "currency": "BTC",
+  "amount": 100000.12345
+}
+
+###
+
+GET localhost:8080/api/wallets
+
+###
+DELETE localhost:8080/api/wallets/13
+###
+
+### 1. Andrei pune un ordin de CUMPĂRARE (BUY)
+### El vrea 0.5 BTC la prețul de 95,000 USDT
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+  "user": {
+    "id": 4
+  },
+  "symbol": "BTC/USDT",
+  "side": "BUY",
+  "price": 0,
+  "quantity": 0.5
+}
+
+### PAUZĂ: În acest moment, verifică consola IntelliJ.
+### Ar trebui să vezi: "📌 Ordin adăugat în Book (BIDS)".
+### În DB: User 1 are 47,500 USDT blocați (0.5 * 95,000).
+
+### 2. Bogdan pune un ordin de VÂNZARE (SELL)
+### El vinde 0.5 BTC la același preț (95,000) - Match Instant!
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+  "user":{"id": 5},
+  "symbol": "BTC/USDT",
+  "side": "SELL",
+  "price": 95000.00,
+  "quantity": 2
+}

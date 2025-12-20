@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class WalletService {
@@ -51,16 +52,16 @@ public class WalletService {
         // --- LOGICA PENTRU BUYER ---
         // A avut banii (USDT) blocați. Acum îi pierde definitiv din "blocked",
         // dar primește marfa (BTC) în "available".
-        updateBalance(buyer.getUserId(), quoteCurrency, totalMoney.negate(), true); // -USDT blocked
-        updateBalance(buyer.getUserId(), baseCurrency, quantity, false);            // +BTC available
+        updateBalance(buyer.getUser().getId(), quoteCurrency, totalMoney.negate(), true); // -USDT blocked
+        updateBalance(buyer.getUser().getId(), baseCurrency, quantity, false);            // +BTC available
 
         // --- LOGICA PENTRU SELLER ---
         // A avut marfa (BTC) blocată. Acum o pierde din "blocked",
         // dar primește banii (USDT) în "available".
-        updateBalance(seller.getUserId(), baseCurrency, quantity.negate(), true); // -BTC blocked
-        updateBalance(seller.getUserId(), quoteCurrency, totalMoney, false);       // +USDT available
+        updateBalance(seller.getUser().getId(), baseCurrency, quantity.negate(), true); // -BTC blocked
+        updateBalance(seller.getUser().getId(), quoteCurrency, totalMoney, false);       // +USDT available
 
-        System.out.println("💰 Settlement finalizat: User " + buyer.getUserId() + " a cumpărat de la " + seller.getUserId());
+        System.out.println("💰 Settlement finalizat: User " + buyer.getUser().getId() + " a cumpărat de la " + seller.getUser().getId());
     }
 
     private void updateBalance(Long userId, String currency, BigDecimal amount, boolean fromBlocked) {
@@ -88,5 +89,51 @@ public class WalletService {
             wallet.setBlockedAmount(BigDecimal.ZERO);
             walletRepository.save(wallet);
         }
+    }
+
+    public Wallet createWallet(Wallet wallet) {
+        return walletRepository.save(wallet);
+    }
+
+    public List<Wallet> getAllWallets() {
+        return walletRepository.findAll();
+    }
+
+    @Transactional
+    public void releaseFunds(Long userId, String currency, BigDecimal amount) {
+        // 1. Căutăm portofelul utilizatorului pentru moneda respectivă
+        Wallet wallet = walletRepository.findByUserIdAndCurrency(userId, currency)
+                .orElseThrow(() -> new RuntimeException("Wallet not found for currency: " + currency));
+
+        // 2. Verificare de siguranță: nu putem debloca mai mult decât avem blocat
+        // (Deși teoretic nu ar trebui să se întâmple dacă restul logicii e ok)
+        if (wallet.getBlockedAmount().compareTo(amount) < 0) {
+            throw new RuntimeException("Inconsistent state: Trying to release more funds than locked.");
+        }
+
+        // 3. Mutăm banii
+        // Scădem din balanța blocată
+        wallet.setBlockedAmount(wallet.getBlockedAmount().subtract(amount));
+        // Adăugăm înapoi în balanța disponibilă
+        wallet.setAvailableAmount(wallet.getAvailableAmount().add(amount));
+
+        // 4. Salvăm modificările
+        walletRepository.save(wallet);
+    }
+
+    public Optional<Wallet> findWalletById(Long id) {
+        return walletRepository.findById(id);
+    }
+
+    public void deleteWallet(Wallet wallet) {
+        walletRepository.delete(wallet);
+    }
+
+    public void addFunds(Long userId, String currency, BigDecimal amount) {
+        Wallet wallet = walletRepository.findByUserIdAndCurrency(userId, currency)
+                .orElseThrow(() -> new RuntimeException("Wallet not found for currency: " + currency));
+
+        wallet.setAvailableAmount(wallet.getAvailableAmount().add(amount));
+        walletRepository.save(wallet);
     }
 }

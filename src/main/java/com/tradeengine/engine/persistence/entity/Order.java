@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -17,23 +18,34 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private String symbol;
 
     @Enumerated(EnumType.STRING)
     private OrderSide side;
 
+    @Column(precision = 20, scale = 8)
     private BigDecimal price;
 
+    @Column(precision = 20, scale = 8)
     private BigDecimal quantity;
 
+    @Column(precision = 20, scale = 8)
     private BigDecimal remainingQuantity;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
     private LocalDateTime timestamp;
+
+    @OneToMany(mappedBy = "sellerOrder")
+    private List<Trade> tradesAsMaker;
+
+    @OneToMany(mappedBy = "buyerOrder")
+    private List<Trade> tradesAsTaker;
 
     protected void onCreate(){
         this.timestamp = LocalDateTime.now();

@@ -27,4 +27,9 @@ public class User {
     @JsonIgnoreProperties("user")
     private List<Wallet> wallets;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("user")
+    private List<Order> orders;
+
+
 }

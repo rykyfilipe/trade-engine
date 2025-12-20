@@ -21,10 +21,18 @@ public class Trade {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long sellerOrderId;
-    private Long buyerOrderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maker_order_id", nullable = false)
+    private Order sellerOrder;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "taker_order_id", nullable = false)
+    private Order buyerOrder;
+
+    @Column(precision = 20, scale = 8)
     private BigDecimal price;
+
+    @Column(precision = 20, scale = 8)
     private BigDecimal quantity;
 
     private String symbol;

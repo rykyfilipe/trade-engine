@@ -1,5 +1,6 @@
 package com.tradeengine.engine.api;
 
+import com.tradeengine.engine.persistence.entity.Order;
 import com.tradeengine.engine.persistence.entity.User;
 import com.tradeengine.engine.persistence.repository.UserRepository;
 import com.tradeengine.engine.service.UserService;
@@ -37,6 +38,24 @@ public class UserController {
         walletService.createDefaultWallets(savedUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+
+        User user;
+
+        try{
+            user = userService.findUserById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found!") );
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found!");
+        }
+
+        userService.deleteUser(user);
+
+        return ResponseEntity.status(HttpStatus.OK).body("User with id : " + id.toString() + " deleted");
     }
 
     @GetMapping

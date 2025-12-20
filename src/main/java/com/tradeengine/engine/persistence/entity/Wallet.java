@@ -9,7 +9,9 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "wallets")
+@Table(name = "wallets", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "currency"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,6 +27,8 @@ public class Wallet {
     private User user;
 
     private String currency; // BTC, USDT, etc.
+    @Column(precision = 20, scale = 8)
     private BigDecimal availableAmount; // Banii pe care îi poate folosi
+    @Column(precision = 20, scale = 8)
     private BigDecimal blockedAmount;
 }
